@@ -11,7 +11,6 @@ import {
   CalendarDays,
   ShieldAlert,
   BadgePercent,
-  TrendingUp,
 } from "lucide-react";
 
 import {
@@ -170,16 +169,14 @@ function Index() {
 
         {/* Conteúdo por aba */}
         {tab === "geral" && (
-          <section className="space-y-6">
-            <div className="grid grid-cols-1 gap-6 lg:grid-cols-5">
-              <div className="lg:col-span-3">
-                <EvolutionChart serie={computed.serie} meta={data.meta} />
-              </div>
-              <div className="lg:col-span-2">
-                <PracaChart pracas={computed.pracas} meta={data.meta} />
-              </div>
+          <section className="space-y-5">
+            <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
+              <EvolutionChart serie={computed.serie} meta={data.meta} />
+              <PracaChart pracas={computed.pracas} meta={data.meta} />
             </div>
-            <RankingTable ranking={computed.ranking} meta={data.meta} />
+            <div className="mx-auto max-w-5xl">
+              <RankingTable ranking={computed.ranking} meta={data.meta} />
+            </div>
           </section>
         )}
 
@@ -199,10 +196,12 @@ function Index() {
         )}
 
         {tab === "diaadia" && (
-          <section className="space-y-6">
-            <EvolutionChart serie={computed.serie} meta={data.meta} />
-            <DiaADiaTable dias={computed.diasResumo} meta={data.meta} />
-          </section>
+          <DiaADiaTable
+            dias={computed.diasResumo}
+            meta={data.meta}
+            dados={data}
+            filtros={filtros}
+          />
         )}
 
         {tab === "indevido" && (

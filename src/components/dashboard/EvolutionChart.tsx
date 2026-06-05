@@ -14,6 +14,7 @@ import { fmtData, fmtPct, type SerieDiaria } from "@/lib/dashboard-data";
 interface EvolutionChartProps {
   serie: SerieDiaria[];
   meta: number;
+  titulo?: string;
 }
 
 function ChartTooltip({ active, payload, label }: any) {
@@ -30,9 +31,10 @@ function ChartTooltip({ active, payload, label }: any) {
   );
 }
 
-export function EvolutionChart({ serie, meta }: EvolutionChartProps) {
-  const min = Math.max(0, Math.floor(Math.min(...serie.map((s) => s.taxa), meta) - 6));
-  const max = Math.min(100, Math.ceil(Math.max(...serie.map((s) => s.taxa), meta) + 4));
+export function EvolutionChart({ serie, meta, titulo }: EvolutionChartProps) {
+  const taxaValues = serie.map((s) => s.taxa);
+  const min = Math.max(0, Math.floor(Math.min(...taxaValues, meta) - 6));
+  const max = Math.ceil(Math.max(...taxaValues, meta) + 4);
 
   return (
     <motion.div
@@ -43,8 +45,8 @@ export function EvolutionChart({ serie, meta }: EvolutionChartProps) {
     >
       <div className="mb-4 flex items-center justify-between">
         <div>
-          <h2 className="font-display text-lg font-bold text-foreground">Evolução diária</h2>
-          <p className="text-sm text-muted-foreground">Taxa de identificação ao longo do período</p>
+          <h2 className="font-display text-lg font-bold text-foreground">{titulo ?? "Evolução diária"}</h2>
+          <p className="text-sm text-muted-foreground">% ID Cliente ao longo do período</p>
         </div>
         <div className="flex items-center gap-4 text-xs">
           <span className="flex items-center gap-1.5 text-muted-foreground">

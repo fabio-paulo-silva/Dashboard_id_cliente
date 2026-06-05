@@ -1,5 +1,5 @@
 import { motion } from "motion/react";
-import { CalendarDays } from "lucide-react";
+import { CalendarDays, BadgeCheck } from "lucide-react";
 
 interface DashboardHeaderProps {
   indicador: string;
@@ -16,7 +16,6 @@ export function DashboardHeader({ descricao, atualizadoEm }: DashboardHeaderProp
 
   return (
     <header className="relative overflow-hidden border-b bg-gradient-primary">
-      {/* Efeitos de fundo */}
       <div className="absolute -right-20 -top-20 h-64 w-64 rounded-full bg-primary/20 blur-3xl" />
       <div className="absolute -bottom-24 left-1/4 h-56 w-56 rounded-full bg-primary/10 blur-3xl" />
 
@@ -27,14 +26,10 @@ export function DashboardHeader({ descricao, atualizadoEm }: DashboardHeaderProp
           transition={{ duration: 0.5 }}
           className="flex flex-wrap items-center justify-between gap-4"
         >
-          {/* Logo + título */}
-          <div className="flex items-center gap-5">
-            <img
-              src={`${import.meta.env.BASE_URL}logo-gentil.svg`}
-              alt="Gentil Negócios"
-              className="h-10 w-auto shrink-0"
-            />
-            <div className="h-8 w-px bg-white/20" />
+          <div className="flex items-center gap-3">
+            <span className="flex h-11 w-11 items-center justify-center rounded-xl bg-primary text-primary-foreground shadow-lg">
+              <BadgeCheck className="h-6 w-6" />
+            </span>
             <div>
               <p className="text-xs font-semibold uppercase tracking-widest text-white/60">
                 Painel Executivo · Indicador
@@ -46,7 +41,6 @@ export function DashboardHeader({ descricao, atualizadoEm }: DashboardHeaderProp
             </div>
           </div>
 
-          {/* Data de atualização */}
           <div className="flex items-center gap-2 rounded-xl bg-white/10 px-4 py-2 text-sm text-white backdrop-blur">
             <CalendarDays className="h-4 w-4 text-primary" />
             <span className="font-medium">Atualizado em {data}</span>
