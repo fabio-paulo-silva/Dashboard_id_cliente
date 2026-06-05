@@ -54,8 +54,9 @@ export interface Filtros {
   praca: string;
   loja: string;
   gestor: string;
-  dataInicio: string; // "all" ou ISO date
-  dataFim: string;    // "all" ou ISO date
+  consultor: string; // "all" ou nome do consultor
+  dataInicio: string;
+  dataFim: string;
 }
 
 export interface SerieDiaria {
@@ -263,9 +264,12 @@ export function computar(dados: DadosConsolidados, f: Filtros): DashboardCompute
     .sort((a, b) => b.taxa - a.taxa);
 
   // ranking por consultor
-  const regsConsultor = (dados.registrosConsultor ?? []).filter(
+  const regsConsultorBase = (dados.registrosConsultor ?? []).filter(
     (r) => ids.has(r.lojaId) && r.data >= inicio && r.data <= fim,
   );
+  const regsConsultor = f.consultor !== "all"
+    ? regsConsultorBase.filter((r) => r.consultor === f.consultor)
+    : regsConsultorBase;
   // Agrupar por consultor (pode atuar em várias lojas — soma tudo)
   const consMapFull = new Map<string, {
     vendas: number; identificados: number; atendIndevido: number; atendId: number;
@@ -351,17 +355,27 @@ export function computar(dados: DadosConsolidados, f: Filtros): DashboardCompute
     }))
     .sort((a, b) => b.taxa - a.taxa);
 
-  // dia a dia resumo
-  const diasResumo: DiaResumo[] = serie.map((s) => {
-    const diasRegs = regs.filter((r) => r.data === s.data);
-    return {
-      data: s.data,
-      vendas: s.vendas,
-      identificados: s.identificados,
-      taxa: s.taxa,
-      lojas: new Set(diasRegs.map((r) => r.lojaId)).size,
-    };
-  });
+  // dia a dia resumo — usa dados de consultor se filtrado por ele
+  const diasResumo: DiaResumo[] = (() => {
+    const fonte = f.consultor !== "all" ? regsConsultor : regs;
+    const dmap = new Map<string, { vendas: number; identificados: number; entidades: Set<string> }>();
+    for (const r of fonte) {
+      const cur = dmap.get(r.data) ?? { vendas: 0, identificados: 0, entidades: new Set() };
+      cur.vendas += r.vendas;
+      cur.identificados += r.identificados;
+      cur.entidades.add(f.consultor !== "all" ? (r as any).consultor ?? r.lojaId : r.lojaId);
+      dmap.set(r.data, cur);
+    }
+    return [...dmap.entries()]
+      .sort((a, b) => (a[0] < b[0] ? -1 : 1))
+      .map(([data, v]) => ({
+        data,
+        vendas: v.vendas,
+        identificados: v.identificados,
+        taxa: v.vendas === 0 ? 0 : Number(((v.identificados / v.vendas) * 100).toFixed(2)),
+        lojas: v.entidades.size,
+      }));
+  })();
 
   // ranking uso indevido por loja (maior % indevido primeiro)
   const rankingIndevido: RankingIndevido[] = lojas

@@ -53,6 +53,7 @@ function Index() {
     praca: "all",
     loja: "all",
     gestor: "all",
+    consultor: "all",
     dataInicio: "all",
     dataFim: "all",
   });
@@ -198,9 +199,15 @@ function Index() {
         {tab === "diaadia" && (
           <DiaADiaTable
             dias={computed.diasResumo}
+            serie={computed.serie}
             meta={data.meta}
-            dados={data}
-            filtros={filtros}
+            tituloGrafico={
+              filtros.consultor !== "all" ? filtros.consultor
+              : filtros.loja !== "all" ? data.lojas.find((l) => l.id === filtros.loja)?.nome
+              : filtros.gestor !== "all" ? filtros.gestor
+              : filtros.praca !== "all" ? filtros.praca
+              : undefined
+            }
           />
         )}
 
