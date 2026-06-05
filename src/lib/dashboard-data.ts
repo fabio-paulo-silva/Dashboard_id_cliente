@@ -17,6 +17,9 @@ export interface Registro {
   identificados: number;
   atendId: number;
   taxa: number;
+  atendIndevido: number;
+  boletosIndevido: number;
+  taxaIndevido: number;
 }
 
 export interface RegistroConsultor {
@@ -27,6 +30,9 @@ export interface RegistroConsultor {
   identificados: number;
   atendId: number;
   taxa: number;
+  atendIndevido: number;
+  boletosIndevido: number;
+  taxaIndevido: number;
 }
 
 export interface DadosConsolidados {
@@ -67,6 +73,8 @@ export interface RankingLoja {
   identificados: number;
   taxa: number;
   vsMeta: number;
+  atendIndevido: number;
+  taxaIndevido: number;
 }
 
 export interface RankingConsultor {
@@ -79,6 +87,28 @@ export interface RankingConsultor {
   identificados: number;
   taxa: number;
   vsMeta: number;
+  atendIndevido: number;
+  taxaIndevido: number;
+}
+
+export interface RankingIndevido {
+  id: string;
+  nome: string;
+  praca: string;
+  gestor: string;
+  atendIndevido: number;
+  boletosIndevido: number;
+  taxaIndevido: number;
+  totalAtend: number;
+}
+
+export interface RankingConsultorIndevido {
+  consultor: string;
+  lojaNome: string;
+  praca: string;
+  atendIndevido: number;
+  taxaIndevido: number;
+  totalAtend: number;
 }
 
 export interface PracaResumo {
@@ -167,6 +197,10 @@ export interface DashboardComputed {
   pracas: PracaResumo[];
   gestores: GestorResumo[];
   diasResumo: DiaResumo[];
+  rankingIndevido: RankingIndevido[];
+  rankingConsultorIndevido: RankingConsultorIndevido[];
+  totalAtendIndevido: number;
+  lojasComIndevido: number;
   melhorLoja?: RankingLoja;
   piorLoja?: RankingLoja;
 }
@@ -223,6 +257,9 @@ export function computar(dados: DadosConsolidados, f: Filtros): DashboardCompute
       const vendas = lr.reduce((s, r) => s + r.vendas, 0);
       const identificados = lr.reduce((s, r) => s + r.identificados, 0);
       const taxa = vendas === 0 ? 0 : (identificados / vendas) * 100;
+      const atendIndevido = lr.reduce((s, r) => s + (r.atendIndevido ?? 0), 0);
+      const atendTotal = lr.reduce((s, r) => s + r.atendId, 0);
+      const taxaIndevido = atendTotal === 0 ? 0 : (atendIndevido / atendTotal) * 100;
       return {
         id: l.id,
         nome: l.nome,
@@ -232,6 +269,8 @@ export function computar(dados: DadosConsolidados, f: Filtros): DashboardCompute
         identificados,
         taxa,
         vsMeta: taxa - dados.meta,
+        atendIndevido,
+        taxaIndevido,
       };
     })
     .filter((r) => r.vendas > 0)
@@ -241,19 +280,22 @@ export function computar(dados: DadosConsolidados, f: Filtros): DashboardCompute
   const regsConsultor = (dados.registrosConsultor ?? []).filter(
     (r) => ids.has(r.lojaId) && r.data >= inicio && r.data <= fim,
   );
-  const consMap = new Map<string, { vendas: number; identificados: number; lojaId: string }>();
+  const consMapFull = new Map<string, { vendas: number; identificados: number; lojaId: string; atendIndevido: number; atendId: number }>();
   for (const r of regsConsultor) {
     const key = `${r.consultor}::${r.lojaId}`;
-    const cur = consMap.get(key) ?? { vendas: 0, identificados: 0, lojaId: r.lojaId };
+    const cur = consMapFull.get(key) ?? { vendas: 0, identificados: 0, lojaId: r.lojaId, atendIndevido: 0, atendId: 0 };
     cur.vendas += r.vendas;
     cur.identificados += r.identificados;
-    consMap.set(key, cur);
+    cur.atendIndevido += r.atendIndevido ?? 0;
+    cur.atendId += r.atendId;
+    consMapFull.set(key, cur);
   }
-  const rankingConsultores: RankingConsultor[] = [...consMap.entries()]
+  const rankingConsultores: RankingConsultor[] = [...consMapFull.entries()]
     .map(([key, v]) => {
       const [consultor] = key.split("::");
       const loja = dados.lojas.find((l) => l.id === v.lojaId);
       const taxa = v.vendas === 0 ? 0 : (v.identificados / v.vendas) * 100;
+      const taxaIndevido = v.atendId === 0 ? 0 : (v.atendIndevido / v.atendId) * 100;
       return {
         consultor,
         lojaId: v.lojaId,
@@ -264,6 +306,8 @@ export function computar(dados: DadosConsolidados, f: Filtros): DashboardCompute
         identificados: v.identificados,
         taxa,
         vsMeta: taxa - dados.meta,
+        atendIndevido: v.atendIndevido,
+        taxaIndevido,
       };
     })
     .filter((r) => r.vendas > 0)
@@ -326,6 +370,32 @@ export function computar(dados: DadosConsolidados, f: Filtros): DashboardCompute
     };
   });
 
+  // ranking uso indevido por loja (maior % indevido primeiro)
+  const rankingIndevido: RankingIndevido[] = lojas
+    .map((l) => {
+      const lr = regs.filter((r) => r.lojaId === l.id);
+      const atendIndevido = lr.reduce((s, r) => s + (r.atendIndevido ?? 0), 0);
+      const boletosIndevido = lr.reduce((s, r) => s + (r.boletosIndevido ?? 0), 0);
+      const totalAtend = lr.reduce((s, r) => s + r.atendId, 0);
+      const taxaIndevido = totalAtend === 0 ? 0 : (atendIndevido / totalAtend) * 100;
+      return { id: l.id, nome: l.nome, praca: l.praca, gestor: l.gestor, atendIndevido, boletosIndevido, taxaIndevido, totalAtend };
+    })
+    .filter((r) => r.atendIndevido > 0)
+    .sort((a, b) => b.taxaIndevido - a.taxaIndevido);
+
+  // ranking uso indevido por consultor
+  const rankingConsultorIndevido: RankingConsultorIndevido[] = [...consMapFull.entries()]
+    .map(([key, v]) => {
+      const [consultor] = key.split("::");
+      const loja = dados.lojas.find((l) => l.id === v.lojaId);
+      const taxaIndevido = v.atendId === 0 ? 0 : (v.atendIndevido / v.atendId) * 100;
+      return { consultor, lojaNome: loja?.nome ?? v.lojaId, praca: loja?.praca ?? "", atendIndevido: v.atendIndevido, taxaIndevido, totalAtend: v.atendId };
+    })
+    .filter((r) => r.atendIndevido > 0)
+    .sort((a, b) => b.taxaIndevido - a.taxaIndevido);
+
+  const totalAtendIndevido = regs.reduce((s, r) => s + (r.atendIndevido ?? 0), 0);
+
   return {
     serie,
     taxaPeriodo,
@@ -340,6 +410,10 @@ export function computar(dados: DadosConsolidados, f: Filtros): DashboardCompute
     pracas,
     gestores,
     diasResumo,
+    rankingIndevido,
+    rankingConsultorIndevido,
+    totalAtendIndevido,
+    lojasComIndevido: rankingIndevido.length,
     melhorLoja: ranking[0],
     piorLoja: ranking[ranking.length - 1],
   };
