@@ -28,11 +28,13 @@ export function DashboardHeader({ descricao, atualizadoEm }: DashboardHeaderProp
           className="flex flex-wrap items-center justify-between gap-4"
         >
           {/* Logo + título */}
-          <div className="flex items-center gap-4">
-            {/* Espaço reservado para logo — substituir pela tag <img> quando tiver o arquivo */}
-            <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-primary text-primary-foreground font-display font-extrabold text-xl shadow-lg">
-              ID
-            </div>
+          <div className="flex items-center gap-5">
+            <img
+              src={`${import.meta.env.BASE_URL}logo-gentil.svg`}
+              alt="Gentil Negócios"
+              className="h-10 w-auto shrink-0"
+            />
+            <div className="h-8 w-px bg-white/20" />
             <div>
               <p className="text-xs font-semibold uppercase tracking-widest text-white/60">
                 Painel Executivo · Indicador

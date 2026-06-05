@@ -1,0 +1,32 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 260 60" width="260" height="60">
+  <defs>
+    <linearGradient id="bg" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#0f0e6e"/>
+      <stop offset="100%" style="stop-color:#1a1896"/>
+    </linearGradient>
+  </defs>
+  <!-- Fundo navy -->
+  <rect width="260" height="60" rx="4" fill="url(#bg)"/>
+  <!-- Silhueta sutil -->
+  <g opacity="0.12" fill="white">
+    <ellipse cx="218" cy="18" rx="7" ry="7"/>
+    <path d="M205 55 C205 38 231 38 231 55"/>
+    <line x1="209" y1="35" x2="200" y2="48" stroke="white" stroke-width="2"/>
+    <line x1="227" y1="35" x2="236" y2="48" stroke="white" stroke-width="2"/>
+  </g>
+  <!-- "Gentil" em serif itálico -->
+  <text x="12" y="40"
+    font-family="'Times New Roman', Georgia, serif"
+    font-size="28"
+    font-style="italic"
+    font-weight="400"
+    fill="white"
+    letter-spacing="0.5">Gentil</text>
+  <!-- "Negócios" em sans-serif bold -->
+  <text x="95" y="40"
+    font-family="'Arial', 'Helvetica Neue', sans-serif"
+    font-size="24"
+    font-weight="700"
+    fill="white"
+    letter-spacing="0.3">Negócios</text>
+</svg>
