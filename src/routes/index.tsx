@@ -2,8 +2,6 @@ import { createFileRoute } from "@tanstack/react-router";
 import { useMemo, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import {
-  Target,
-  Percent,
   Store,
   Users,
   Loader2,
@@ -12,6 +10,8 @@ import {
   UserCheck,
   CalendarDays,
   ShieldAlert,
+  BadgePercent,
+  TrendingUp,
 } from "lucide-react";
 
 import {
@@ -39,13 +39,13 @@ export const Route = createFileRoute("/")({
 
 type Tab = "geral" | "lojas" | "consultores" | "gestores" | "diaadia" | "indevido";
 
-const TABS: { id: Tab; label: string; icon: React.ElementType }[] = [
-  { id: "geral", label: "Visão Geral", icon: LayoutDashboard },
-  { id: "lojas", label: "Por Loja", icon: Store },
-  { id: "consultores", label: "Consultores", icon: Users },
-  { id: "gestores", label: "Gestores", icon: UserCheck },
-  { id: "diaadia", label: "Dia a Dia", icon: CalendarDays },
-  { id: "indevido", label: "Uso Indevido", icon: ShieldAlert },
+const TABS: { id: Tab; label: string; icon: React.ElementType; danger?: boolean }[] = [
+  { id: "geral",       label: "Visão Geral",  icon: LayoutDashboard },
+  { id: "lojas",       label: "Por Loja",     icon: Store },
+  { id: "consultores", label: "Consultores",  icon: Users },
+  { id: "gestores",    label: "Gestores",     icon: UserCheck },
+  { id: "diaadia",     label: "Dia a Dia",    icon: CalendarDays },
+  { id: "indevido",    label: "Uso Indevido", icon: ShieldAlert, danger: true },
 ];
 
 function Index() {
@@ -55,6 +55,7 @@ function Index() {
     praca: "all",
     loja: "all",
     gestor: "all",
+    data: "all",
   });
 
   const { data, isLoading, isError } = useQuery({
@@ -95,8 +96,6 @@ function Index() {
     );
   }
 
-  const atingimento = (computed.taxaPeriodo / data.meta) * 100;
-
   return (
     <div className="min-h-screen bg-background pb-16">
       <DashboardHeader
@@ -108,27 +107,19 @@ function Index() {
       <main className="mx-auto max-w-7xl space-y-5 px-4 pt-5 sm:px-6 lg:px-8">
         <FilterBar dados={data} filtros={filtros} onChange={setFiltros} />
 
-        {/* KPI Cards — sempre visíveis */}
-        <section className="grid grid-cols-2 gap-3 sm:grid-cols-2 lg:grid-cols-4">
+        {/* KPI Cards */}
+        <section className="grid grid-cols-2 gap-3 lg:grid-cols-3">
           <KpiCard
             index={0}
-            label="Taxa de identificação"
+            label="% ID Cliente"
             value={fmtPct(computed.taxaPeriodo, 1)}
-            icon={Percent}
+            icon={BadgePercent}
             delta={computed.variacaoPp}
-            sub="vs. período anterior"
+            sub={`Meta ${fmtPct(data.meta, 0)} · ${computed.vsMeta >= 0 ? "+" : ""}${computed.vsMeta.toLocaleString("pt-BR", { maximumFractionDigits: 1 })} p.p.`}
             tone={computed.taxaPeriodo >= data.meta ? "success" : "default"}
           />
           <KpiCard
             index={1}
-            label="Atingimento da meta"
-            value={fmtPct(atingimento, 0)}
-            icon={Target}
-            sub={`Meta ${fmtPct(data.meta, 0)} · ${computed.vsMeta >= 0 ? "+" : ""}${computed.vsMeta.toLocaleString("pt-BR", { maximumFractionDigits: 1 })} p.p.`}
-            tone={computed.vsMeta >= 0 ? "success" : "destructive"}
-          />
-          <KpiCard
-            index={2}
             label="Lojas acima da meta"
             value={`${computed.lojasAcimaMeta}/${computed.totalLojas}`}
             icon={Store}
@@ -140,7 +131,7 @@ function Index() {
             tone="default"
           />
           <KpiCard
-            index={3}
+            index={2}
             label="Clientes identificados"
             value={fmtNum(computed.totalIdentificados)}
             icon={Users}
@@ -149,23 +140,33 @@ function Index() {
           />
         </section>
 
-        {/* Tabs de navegação */}
-        <nav className="flex gap-1 overflow-x-auto rounded-xl border bg-muted/30 p-1">
-          {TABS.map(({ id, label, icon: Icon }) => (
-            <button
-              key={id}
-              onClick={() => setTab(id)}
-              className={cn(
-                "flex flex-1 min-w-max items-center justify-center gap-1.5 rounded-lg px-3 py-2 text-xs font-semibold transition-all",
-                tab === id
-                  ? "bg-background text-foreground shadow-sm"
-                  : "text-muted-foreground hover:text-foreground",
-              )}
-            >
-              <Icon className="h-3.5 w-3.5 shrink-0" />
-              <span>{label}</span>
-            </button>
-          ))}
+        {/* Tabs de navegação destacadas */}
+        <nav className="rounded-2xl border bg-card p-1.5 shadow-card">
+          <div className="flex overflow-x-auto gap-1">
+            {TABS.map(({ id, label, icon: Icon, danger }) => {
+              const active = tab === id;
+              return (
+                <button
+                  key={id}
+                  onClick={() => setTab(id)}
+                  className={cn(
+                    "flex flex-1 min-w-max items-center justify-center gap-2 rounded-xl px-4 py-2.5 text-sm font-bold transition-all whitespace-nowrap",
+                    active && !danger &&
+                      "bg-primary text-primary-foreground shadow-md",
+                    active && danger &&
+                      "bg-destructive text-destructive-foreground shadow-md",
+                    !active && !danger &&
+                      "text-muted-foreground hover:bg-muted hover:text-foreground",
+                    !active && danger &&
+                      "text-destructive/70 hover:bg-destructive/10 hover:text-destructive",
+                  )}
+                >
+                  <Icon className="h-4 w-4 shrink-0" />
+                  <span>{label}</span>
+                </button>
+              );
+            })}
+          </div>
         </nav>
 
         {/* Conteúdo por aba */}
@@ -179,7 +180,7 @@ function Index() {
                 <PracaChart pracas={computed.pracas} meta={data.meta} />
               </div>
             </div>
-            <RankingTable ranking={computed.ranking.slice(0, 10)} meta={data.meta} />
+            <RankingTable ranking={computed.ranking} meta={data.meta} />
           </section>
         )}
 

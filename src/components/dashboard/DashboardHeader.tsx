@@ -1,5 +1,5 @@
 import { motion } from "motion/react";
-import { BadgeCheck, CalendarDays } from "lucide-react";
+import { CalendarDays } from "lucide-react";
 
 interface DashboardHeaderProps {
   indicador: string;
@@ -7,8 +7,8 @@ interface DashboardHeaderProps {
   atualizadoEm: string;
 }
 
-export function DashboardHeader({ indicador, descricao, atualizadoEm }: DashboardHeaderProps) {
-  const data = new Date(atualizadoEm + "T00:00:00").toLocaleDateString("pt-BR", {
+export function DashboardHeader({ descricao, atualizadoEm }: DashboardHeaderProps) {
+  const data = new Date(atualizadoEm).toLocaleDateString("pt-BR", {
     day: "2-digit",
     month: "long",
     year: "numeric",
@@ -16,32 +16,37 @@ export function DashboardHeader({ indicador, descricao, atualizadoEm }: Dashboar
 
   return (
     <header className="relative overflow-hidden border-b bg-gradient-primary">
-      <div className="absolute -right-16 -top-24 h-72 w-72 rounded-full bg-primary-foreground/10 blur-3xl" />
-      <div className="absolute -bottom-32 left-1/3 h-64 w-64 rounded-full bg-primary-foreground/5 blur-3xl" />
-      <div className="relative mx-auto max-w-7xl px-4 py-8 sm:px-6 lg:px-8">
+      {/* Efeitos de fundo */}
+      <div className="absolute -right-20 -top-20 h-64 w-64 rounded-full bg-primary/20 blur-3xl" />
+      <div className="absolute -bottom-24 left-1/4 h-56 w-56 rounded-full bg-primary/10 blur-3xl" />
+
+      <div className="relative mx-auto max-w-7xl px-4 py-6 sm:px-6 lg:px-8">
         <motion.div
           initial={{ opacity: 0, y: 12 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.5 }}
           className="flex flex-wrap items-center justify-between gap-4"
         >
-          <div className="flex items-center gap-3">
-            <span className="flex h-12 w-12 items-center justify-center rounded-2xl bg-primary-foreground/15 text-primary-foreground backdrop-blur">
-              <BadgeCheck className="h-6 w-6" />
-            </span>
+          {/* Logo + título */}
+          <div className="flex items-center gap-4">
+            {/* Espaço reservado para logo — substituir pela tag <img> quando tiver o arquivo */}
+            <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-primary text-primary-foreground font-display font-extrabold text-xl shadow-lg">
+              ID
+            </div>
             <div>
-              <p className="text-xs font-semibold uppercase tracking-widest text-primary-foreground/70">
-                Painel Executivo
+              <p className="text-xs font-semibold uppercase tracking-widest text-white/60">
+                Painel Executivo · Indicador
               </p>
-              <h1 className="font-display text-2xl font-extrabold text-primary-foreground sm:text-3xl">
-                {indicador}
+              <h1 className="font-display text-2xl font-extrabold text-white sm:text-3xl">
+                % ID Cliente
               </h1>
-              <p className="text-sm text-primary-foreground/80">{descricao}</p>
+              <p className="mt-0.5 text-sm text-white/70">{descricao}</p>
             </div>
           </div>
 
-          <div className="flex items-center gap-2 rounded-xl bg-primary-foreground/12 px-3.5 py-2 text-sm text-primary-foreground backdrop-blur">
-            <CalendarDays className="h-4 w-4" />
+          {/* Data de atualização */}
+          <div className="flex items-center gap-2 rounded-xl bg-white/10 px-4 py-2 text-sm text-white backdrop-blur">
+            <CalendarDays className="h-4 w-4 text-primary" />
             <span className="font-medium">Atualizado em {data}</span>
           </div>
         </motion.div>

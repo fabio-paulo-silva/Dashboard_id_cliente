@@ -55,6 +55,7 @@ export interface Filtros {
   praca: string;
   loja: string;
   gestor: string;
+  data: string; // "all" ou data ISO específica
 }
 
 export interface SerieDiaria {
@@ -211,7 +212,9 @@ export function computar(dados: DadosConsolidados, f: Filtros): DashboardCompute
   const inicio = windowStart(dados, f);
   const fim = dados.periodo.fim;
 
-  const regs = registrosNoIntervalo(dados.registros, ids, inicio, fim);
+  const regs = f.data !== "all"
+    ? dados.registros.filter((r) => ids.has(r.lojaId) && r.data === f.data)
+    : registrosNoIntervalo(dados.registros, ids, inicio, fim);
 
   // série diária
   const map = new Map<string, { vendas: number; identificados: number }>();
@@ -277,9 +280,9 @@ export function computar(dados: DadosConsolidados, f: Filtros): DashboardCompute
     .sort((a, b) => b.taxa - a.taxa);
 
   // ranking por consultor
-  const regsConsultor = (dados.registrosConsultor ?? []).filter(
-    (r) => ids.has(r.lojaId) && r.data >= inicio && r.data <= fim,
-  );
+  const regsConsultor = f.data !== "all"
+    ? (dados.registrosConsultor ?? []).filter((r) => ids.has(r.lojaId) && r.data === f.data)
+    : (dados.registrosConsultor ?? []).filter((r) => ids.has(r.lojaId) && r.data >= inicio && r.data <= fim);
   const consMapFull = new Map<string, { vendas: number; identificados: number; lojaId: string; atendIndevido: number; atendId: number }>();
   for (const r of regsConsultor) {
     const key = `${r.consultor}::${r.lojaId}`;
