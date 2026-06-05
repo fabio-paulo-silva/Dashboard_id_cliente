@@ -51,11 +51,11 @@ const TABS: { id: Tab; label: string; icon: React.ElementType; danger?: boolean 
 function Index() {
   const [tab, setTab] = useState<Tab>("geral");
   const [filtros, setFiltros] = useState<Filtros>({
-    dias: 30,
     praca: "all",
     loja: "all",
     gestor: "all",
-    data: "all",
+    dataInicio: "all",
+    dataFim: "all",
   });
 
   const { data, isLoading, isError } = useQuery({
@@ -114,8 +114,7 @@ function Index() {
             label="% ID Cliente"
             value={fmtPct(computed.taxaPeriodo, 1)}
             icon={BadgePercent}
-            delta={computed.variacaoPp}
-            sub={`Meta ${fmtPct(data.meta, 0)} · ${computed.vsMeta >= 0 ? "+" : ""}${computed.vsMeta.toLocaleString("pt-BR", { maximumFractionDigits: 1 })} p.p.`}
+            sub={`Meta ${fmtPct(data.meta, 0)} · ${computed.vsMeta >= 0 ? "+" : ""}${fmtPct(computed.vsMeta, 1)}`}
             tone={computed.taxaPeriodo >= data.meta ? "success" : "default"}
           />
           <KpiCard

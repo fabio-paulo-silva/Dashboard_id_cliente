@@ -8,7 +8,6 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Button } from "@/components/ui/button";
-import { cn } from "@/lib/utils";
 import { fmtData } from "@/lib/dashboard-data";
 import type { DadosConsolidados, Filtros } from "@/lib/dashboard-data";
 
@@ -18,18 +17,13 @@ interface FilterBarProps {
   onChange: (next: Filtros) => void;
 }
 
-const PERIODOS: { label: string; value: Filtros["dias"] }[] = [
-  { label: "7d", value: 7 },
-  { label: "30d", value: 30 },
-  { label: "Tudo", value: "all" },
-];
-
-// Datas disponíveis únicas ordenadas desc
 function datasDisponiveis(dados: DadosConsolidados): string[] {
-  return [...new Set(dados.registros.map((r) => r.data))].sort().reverse();
+  return [...new Set(dados.registros.map((r) => r.data))].sort();
 }
 
 export function FilterBar({ dados, filtros, onChange }: FilterBarProps) {
+  const datas = datasDisponiveis(dados);
+
   const lojasDisponiveis = dados.lojas
     .filter((l) => {
       if (filtros.praca !== "all" && l.praca !== filtros.praca) return false;
@@ -38,19 +32,22 @@ export function FilterBar({ dados, filtros, onChange }: FilterBarProps) {
     })
     .sort((a, b) => a.nome.localeCompare(b.nome));
 
-  const datas = datasDisponiveis(dados);
-
   const set = (patch: Partial<Filtros>) => onChange({ ...filtros, ...patch });
 
   const reset = () =>
-    onChange({ dias: 30, praca: "all", loja: "all", gestor: "all", data: "all" });
+    onChange({ praca: "all", loja: "all", gestor: "all", dataInicio: "all", dataFim: "all" });
 
   const isDefault =
-    filtros.dias === 30 &&
     filtros.praca === "all" &&
     filtros.loja === "all" &&
     filtros.gestor === "all" &&
-    filtros.data === "all";
+    filtros.dataInicio === "all" &&
+    filtros.dataFim === "all";
+
+  // Datas válidas para o filtro "Até" (>= dataInicio)
+  const datasAte = filtros.dataInicio !== "all"
+    ? datas.filter((d) => d >= filtros.dataInicio)
+    : datas;
 
   return (
     <motion.div
@@ -65,49 +62,47 @@ export function FilterBar({ dados, filtros, onChange }: FilterBarProps) {
       </div>
 
       <div className="flex flex-wrap items-end gap-3">
-        {/* Data específica */}
+        {/* De */}
         <div className="flex flex-col gap-1.5">
-          <span className="text-xs font-semibold text-muted-foreground">Data</span>
+          <span className="text-xs font-semibold text-muted-foreground">De</span>
           <Select
-            value={filtros.data}
-            onValueChange={(v) => set({ data: v, dias: v === "all" ? 30 : "all" })}
+            value={filtros.dataInicio}
+            onValueChange={(v) => {
+              // Se dataFim < nova dataInicio, reset dataFim
+              const newFim = filtros.dataFim !== "all" && filtros.dataFim < v ? "all" : filtros.dataFim;
+              set({ dataInicio: v, dataFim: newFim });
+            }}
           >
             <SelectTrigger className="h-9 min-w-[130px] bg-background">
-              <SelectValue placeholder="Todos os dias" />
+              <SelectValue placeholder="Início" />
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value="all">Todos os dias</SelectItem>
+              <SelectItem value="all">Início do período</SelectItem>
               {datas.map((d) => (
-                <SelectItem key={d} value={d}>
-                  {fmtData(d)}
-                </SelectItem>
+                <SelectItem key={d} value={d}>{fmtData(d)}</SelectItem>
               ))}
             </SelectContent>
           </Select>
         </div>
 
-        {/* Período — só ativo quando não há data específica */}
-        {filtros.data === "all" && (
-          <div className="flex flex-col gap-1.5">
-            <span className="text-xs font-semibold text-muted-foreground">Período</span>
-            <div className="inline-flex rounded-lg border bg-muted/50 p-1">
-              {PERIODOS.map((p) => (
-                <button
-                  key={String(p.value)}
-                  onClick={() => set({ dias: p.value })}
-                  className={cn(
-                    "rounded-md px-3 py-1.5 text-xs font-semibold transition-colors",
-                    filtros.dias === p.value
-                      ? "bg-primary text-primary-foreground shadow-sm"
-                      : "text-muted-foreground hover:text-foreground",
-                  )}
-                >
-                  {p.label}
-                </button>
+        {/* Até */}
+        <div className="flex flex-col gap-1.5">
+          <span className="text-xs font-semibold text-muted-foreground">Até</span>
+          <Select
+            value={filtros.dataFim}
+            onValueChange={(v) => set({ dataFim: v })}
+          >
+            <SelectTrigger className="h-9 min-w-[130px] bg-background">
+              <SelectValue placeholder="Fim" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">Fim do período</SelectItem>
+              {datasAte.map((d) => (
+                <SelectItem key={d} value={d}>{fmtData(d)}</SelectItem>
               ))}
-            </div>
-          </div>
-        )}
+            </SelectContent>
+          </Select>
+        </div>
 
         <FilterSelect
           label="Praça"
@@ -149,15 +144,9 @@ export function FilterBar({ dados, filtros, onChange }: FilterBarProps) {
 }
 
 function FilterSelect({
-  label,
-  value,
-  placeholder,
-  onValueChange,
-  options,
+  label, value, placeholder, onValueChange, options,
 }: {
-  label: string;
-  value: string;
-  placeholder: string;
+  label: string; value: string; placeholder: string;
   onValueChange: (v: string) => void;
   options: { value: string; label: string }[];
 }) {
@@ -171,9 +160,7 @@ function FilterSelect({
         <SelectContent>
           <SelectItem value="all">{placeholder}</SelectItem>
           {options.map((o) => (
-            <SelectItem key={o.value} value={o.value}>
-              {o.label}
-            </SelectItem>
+            <SelectItem key={o.value} value={o.value}>{o.label}</SelectItem>
           ))}
         </SelectContent>
       </Select>

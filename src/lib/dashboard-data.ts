@@ -51,11 +51,11 @@ export interface DadosConsolidados {
 }
 
 export interface Filtros {
-  dias: number | "all";
   praca: string;
   loja: string;
   gestor: string;
-  data: string; // "all" ou data ISO específica
+  dataInicio: string; // "all" ou ISO date
+  dataFim: string;    // "all" ou ISO date
 }
 
 export interface SerieDiaria {
@@ -209,12 +209,10 @@ export interface DashboardComputed {
 export function computar(dados: DadosConsolidados, f: Filtros): DashboardComputed {
   const lojas = lojasFiltradas(dados, f);
   const ids = new Set(lojas.map((l) => l.id));
-  const inicio = windowStart(dados, f);
-  const fim = dados.periodo.fim;
+  const inicio = f.dataInicio !== "all" ? f.dataInicio : dados.periodo.inicio;
+  const fim = f.dataFim !== "all" ? f.dataFim : dados.periodo.fim;
 
-  const regs = f.data !== "all"
-    ? dados.registros.filter((r) => ids.has(r.lojaId) && r.data === f.data)
-    : registrosNoIntervalo(dados.registros, ids, inicio, fim);
+  const regs = registrosNoIntervalo(dados.registros, ids, inicio, fim);
 
   // série diária
   const map = new Map<string, { vendas: number; identificados: number }>();
@@ -237,21 +235,7 @@ export function computar(dados: DadosConsolidados, f: Filtros): DashboardCompute
   const totalIdentificados = regs.reduce((s, r) => s + r.identificados, 0);
   const taxaPeriodo = taxaPonderada(regs);
 
-  // variação vs período anterior
-  let variacaoPp = 0;
-  if (f.dias !== "all") {
-    const prevFim = addDays(inicio, -1);
-    const prevInicio = addDays(prevFim, -(f.dias - 1));
-    const prevRegs = registrosNoIntervalo(dados.registros, ids, prevInicio, prevFim);
-    if (prevRegs.length) variacaoPp = taxaPeriodo - taxaPonderada(prevRegs);
-  } else if (serie.length > 1) {
-    const half = Math.floor(serie.length / 2);
-    const first = serie.slice(0, half);
-    const second = serie.slice(half);
-    const avg = (s: SerieDiaria[]) =>
-      s.reduce((a, b) => a + b.taxa, 0) / Math.max(1, s.length);
-    variacaoPp = avg(second) - avg(first);
-  }
+  const variacaoPp = 0;
 
   // ranking por loja
   const ranking: RankingLoja[] = lojas
@@ -280,9 +264,9 @@ export function computar(dados: DadosConsolidados, f: Filtros): DashboardCompute
     .sort((a, b) => b.taxa - a.taxa);
 
   // ranking por consultor
-  const regsConsultor = f.data !== "all"
-    ? (dados.registrosConsultor ?? []).filter((r) => ids.has(r.lojaId) && r.data === f.data)
-    : (dados.registrosConsultor ?? []).filter((r) => ids.has(r.lojaId) && r.data >= inicio && r.data <= fim);
+  const regsConsultor = (dados.registrosConsultor ?? []).filter(
+    (r) => ids.has(r.lojaId) && r.data >= inicio && r.data <= fim,
+  );
   const consMapFull = new Map<string, { vendas: number; identificados: number; lojaId: string; atendIndevido: number; atendId: number }>();
   for (const r of regsConsultor) {
     const key = `${r.consultor}::${r.lojaId}`;
