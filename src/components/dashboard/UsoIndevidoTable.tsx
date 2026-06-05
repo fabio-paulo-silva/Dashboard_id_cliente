@@ -166,10 +166,16 @@ export function UsoIndevidoTable({ lojas, consultores, totalAtend, lojasComIndev
                     </td>
                     <td className="px-2 py-2.5">
                       <p className="font-semibold text-foreground">{c.consultor}</p>
-                      <p className="text-xs text-muted-foreground md:hidden">{c.lojaNome}</p>
+                      <p className="text-xs text-muted-foreground md:hidden">{c.nLojas === 1 ? c.lojas[0] : `${c.nLojas} lojas`}</p>
                     </td>
-                    <td className="hidden px-2 py-2.5 text-muted-foreground md:table-cell text-xs">{c.lojaNome}</td>
-                    <td className="hidden px-2 py-2.5 text-muted-foreground lg:table-cell text-xs">{c.praca}</td>
+                    <td className="hidden px-2 py-2.5 text-muted-foreground md:table-cell text-xs">{c.nLojas === 1 ? c.lojas[0] : `${c.nLojas} lojas`}</td>
+                    <td className="hidden px-2 py-2.5 text-muted-foreground lg:table-cell text-xs">
+                      {c.nLojas === 1 ? c.lojas[0] : (
+                        <span className="cursor-help text-primary underline decoration-dotted" title={c.lojas.join("\n")}>
+                          {c.nLojas} lojas
+                        </span>
+                      )}
+                    </td>
                     <td className="px-2 py-2.5">
                       <div className="flex items-center gap-2">
                         <span className="inline-flex items-center rounded-full bg-destructive/12 px-2.5 py-0.5 text-xs font-bold text-destructive tabular-nums">
