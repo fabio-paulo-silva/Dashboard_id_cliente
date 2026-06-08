@@ -130,7 +130,8 @@ export interface GrupoDispersao {
   media: number;
   mediana: number;
   amplitude: number;
-  desvPad: number;
+  /** Desvio médio absoluto em relação à META: mean(|taxa_i − meta|) */
+  desvMeta: number;
   acimaMeta: number;
 }
 
@@ -245,9 +246,10 @@ function calcStats(pontos: PontoDispersao[], meta: number): Omit<GrupoDispersao,
   const mid = Math.floor(n / 2);
   const mediana = n % 2 === 0 ? (taxas[mid - 1] + taxas[mid]) / 2 : taxas[mid];
   const amplitude = max - min;
-  const desvPad = Math.sqrt(taxas.reduce((s, t) => s + (t - media) ** 2, 0) / (n || 1));
+  // Desvio médio absoluto vs META: "em média, quanto cada membro está longe da meta"
+  const desvMeta = taxas.reduce((s, t) => s + Math.abs(t - meta), 0) / (n || 1);
   const acimaMeta = taxas.filter((t) => t >= meta).length;
-  return { n, min, max, media, mediana, amplitude, desvPad, acimaMeta };
+  return { n, min, max, media, mediana, amplitude, desvMeta, acimaMeta };
 }
 
 export function computar(dados: DadosConsolidados, f: Filtros): DashboardComputed {

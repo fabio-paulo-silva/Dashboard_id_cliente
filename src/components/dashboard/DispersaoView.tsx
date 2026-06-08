@@ -6,7 +6,7 @@ import { fmtPct, fmtNum, type GrupoDispersao, type DispersaoData, type PontoDisp
 import { SortTh } from "./SortTh";
 
 type VisaoType = "consultoresPorLoja" | "lojasPorGestor" | "lojasPorPraca";
-type SortKey = "amplitude" | "desvPad" | "media" | "n" | "grupo";
+type SortKey = "amplitude" | "desvMeta" | "media" | "n" | "grupo";
 
 const VISOES: { id: VisaoType; label: string; icon: React.ElementType; sub: string }[] = [
   { id: "consultoresPorLoja", label: "Consultores por Loja",  icon: Users,      sub: "Variação entre consultores dentro da mesma loja" },
@@ -288,7 +288,7 @@ export function DispersaoView({ dispersao, meta }: Props) {
                 <SortTh label="Média"      sortKey="media"     activeKey={sortKey} dir={sortDir} onSort={toggle} className="px-2" />
                 <SortTh label="Máx"        sortKey="max"       activeKey={sortKey} dir={sortDir} onSort={toggle} className="px-2" />
                 <SortTh label="Amplitude"  sortKey="amplitude" activeKey={sortKey} dir={sortDir} onSort={toggle} className="px-2" />
-                <SortTh label="Desvio Padrão" sortKey="desvPad" activeKey={sortKey} dir={sortDir} onSort={toggle} className="px-2" />
+                <SortTh label="Dist. Média à Meta" sortKey="desvMeta" activeKey={sortKey} dir={sortDir} onSort={toggle} className="px-2" />
                 <th className="px-5 py-3 text-right text-xs font-semibold text-muted-foreground">
                   Acima meta
                 </th>
@@ -353,9 +353,14 @@ export function DispersaoView({ dispersao, meta }: Props) {
                           </span>
                         </div>
                       </td>
-                      {/* Desvio Padrão */}
-                      <td className="px-2 py-3 tabular-nums text-muted-foreground">
-                        {fmtPct(g.desvPad, 1)} pp
+                      {/* Distância média à meta */}
+                      <td className="px-2 py-3">
+                        <span className={cn(
+                          "font-semibold tabular-nums",
+                          g.desvMeta < 20 ? "text-primary" : g.desvMeta < 50 ? "text-amber-500" : "text-destructive",
+                        )}>
+                          {fmtPct(g.desvMeta, 1)} pp
+                        </span>
                       </td>
                       {/* Acima meta */}
                       <td className="px-5 py-3 text-right">
