@@ -40,16 +40,18 @@ def main():
             row = df_pdv.iloc[i]; pdv = str(row[0]).strip()
             if not pdv or pdv in ("nan","PDV"): continue
             try:
-                identificados = float(row[5]) if pd.notna(row[5]) else 0
+                cpf_bruto = float(row[5]) if pd.notna(row[5]) else 0
                 boletos = float(row[20]) if pd.notna(row[20]) else 0
                 atend_id = float(row[2]) if pd.notna(row[2]) else 0
                 atend_indevido = float(row[8]) if pd.notna(row[8]) else 0
                 boletos_indevido = float(row[26]) if pd.notna(row[26]) else 0
-                taxa = round((identificados/boletos*100) if boletos>0 else 0, 4)
+                # Fórmula correta: (Atend com CPF - Usos Indevidos) / Total Boletos
+                cpf_net = max(0, cpf_bruto - atend_indevido)
+                taxa = round((cpf_net/boletos*100) if boletos>0 else 0, 4)
                 taxa_inv_raw = float(row[14]) if pd.notna(row[14]) else 0
                 taxa_indevido = round(taxa_inv_raw*100 if taxa_inv_raw<=1 else taxa_inv_raw, 4)
                 registros_pdv.append({"data":data_iso,"lojaId":pdv,"vendas":int(boletos),
-                    "identificados":int(identificados),"atendId":int(atend_id),"taxa":taxa,
+                    "identificados":int(cpf_net),"atendId":int(atend_id),"taxa":taxa,
                     "atendIndevido":int(atend_indevido),"boletosIndevido":int(boletos_indevido),"taxaIndevido":taxa_indevido})
             except: pass
 
@@ -61,15 +63,17 @@ def main():
             try:
                 atend_id = float(row[2]) if pd.notna(row[2]) else 0
                 boletos = float(row[7]) if pd.notna(row[7]) else 0
-                boletos_id = float(row[8]) if pd.notna(row[8]) else 0
+                # row[4] = % Atend com CPF (IAF 2026) = (atend_cpf - indevidos) / boletos — já é a fórmula correta
                 taxa_raw = float(row[4]) if pd.notna(row[4]) else 0
                 taxa = round(taxa_raw*100 if taxa_raw<=5 else taxa_raw, 4)
+                # identificados = taxa_raw * boletos = (atend_cpf - indevidos) — soma em todas as lojas
+                atend_cpf_net = round(taxa_raw * boletos) if boletos > 0 else 0
                 atend_indevido = float(row[3]) if pd.notna(row[3]) else 0
                 boletos_indevido = float(row[9]) if pd.notna(row[9]) else 0
                 taxa_inv_raw = float(row[5]) if pd.notna(row[5]) else 0
                 taxa_indevido = round(taxa_inv_raw*100 if taxa_inv_raw<=1 else taxa_inv_raw, 4)
                 registros_cons.append({"data":data_iso,"lojaId":pdv,"consultor":consultor,
-                    "vendas":int(boletos),"identificados":int(boletos_id),"atendId":int(atend_id),"taxa":taxa,
+                    "vendas":int(boletos),"identificados":int(atend_cpf_net),"atendId":int(atend_id),"taxa":taxa,
                     "atendIndevido":int(atend_indevido),"boletosIndevido":int(boletos_indevido),"taxaIndevido":taxa_indevido})
             except: pass
 
