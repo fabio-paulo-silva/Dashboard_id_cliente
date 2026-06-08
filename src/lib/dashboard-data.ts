@@ -112,6 +112,34 @@ export interface RankingConsultorIndevido {
   totalAtend: number;
 }
 
+// ─── Dispersão ────────────────────────────────────────────────────────────────
+export interface PontoDispersao {
+  nome: string;
+  /** % ID Cliente = identificados / vendas × 100  (identificados = cpf_bruto − indevidos) */
+  taxa: number;
+  vendas: number;
+  identificados: number;
+}
+
+export interface GrupoDispersao {
+  grupo: string;
+  pontos: PontoDispersao[];  // sorted by taxa asc
+  n: number;
+  min: number;
+  max: number;
+  media: number;
+  mediana: number;
+  amplitude: number;
+  desvPad: number;
+  acimaMeta: number;
+}
+
+export interface DispersaoData {
+  consultoresPorLoja: GrupoDispersao[];
+  lojasPorGestor: GrupoDispersao[];
+  lojasPorPraca: GrupoDispersao[];
+}
+
 export interface PracaResumo {
   praca: string;
   taxa: number;
@@ -204,6 +232,22 @@ export interface DashboardComputed {
   lojasComIndevido: number;
   melhorLoja?: RankingLoja;
   piorLoja?: RankingLoja;
+  dispersao: DispersaoData;
+}
+
+// ─── Helper: estatísticas de dispersão ────────────────────────────────────────
+function calcStats(pontos: PontoDispersao[], meta: number): Omit<GrupoDispersao, "grupo" | "pontos"> {
+  const taxas = pontos.map((p) => p.taxa).sort((a, b) => a - b);
+  const n = taxas.length;
+  const min = taxas[0] ?? 0;
+  const max = taxas[n - 1] ?? 0;
+  const media = taxas.reduce((s, t) => s + t, 0) / (n || 1);
+  const mid = Math.floor(n / 2);
+  const mediana = n % 2 === 0 ? (taxas[mid - 1] + taxas[mid]) / 2 : taxas[mid];
+  const amplitude = max - min;
+  const desvPad = Math.sqrt(taxas.reduce((s, t) => s + (t - media) ** 2, 0) / (n || 1));
+  const acimaMeta = taxas.filter((t) => t >= meta).length;
+  return { n, min, max, media, mediana, amplitude, desvPad, acimaMeta };
 }
 
 export function computar(dados: DadosConsolidados, f: Filtros): DashboardComputed {
@@ -402,6 +446,94 @@ export function computar(dados: DadosConsolidados, f: Filtros): DashboardCompute
 
   const totalAtendIndevido = regs.reduce((s, r) => s + (r.atendIndevido ?? 0), 0);
 
+  // ─── Dispersão ────────────────────────────────────────────────────────────
+  // FORMULA: taxa = identificados / vendas × 100
+  //          identificados já vem do Python como (cpf_bruto − indevidos)
+
+  // 1) Consultores por loja — per-loja taxa (não multi-loja agregada)
+  const lojaConsMap = new Map<string, Map<string, { identificados: number; vendas: number }>>();
+  for (const r of regsConsultorBase) {
+    if (!lojaConsMap.has(r.lojaId)) lojaConsMap.set(r.lojaId, new Map());
+    const cm = lojaConsMap.get(r.lojaId)!;
+    const cur = cm.get(r.consultor) ?? { identificados: 0, vendas: 0 };
+    cur.identificados += r.identificados;
+    cur.vendas += r.vendas;
+    cm.set(r.consultor, cur);
+  }
+  const consultoresPorLoja: GrupoDispersao[] = [];
+  for (const [lojaId, cm] of lojaConsMap) {
+    const loja = dados.lojas.find((l) => l.id === lojaId);
+    if (!loja) continue;
+    const pontos: PontoDispersao[] = [...cm.entries()]
+      .filter(([, v]) => v.vendas > 0)
+      .map(([nome, v]) => ({
+        nome,
+        taxa: (v.identificados / v.vendas) * 100,
+        vendas: v.vendas,
+        identificados: v.identificados,
+      }))
+      .sort((a, b) => a.taxa - b.taxa);
+    if (pontos.length < 2) continue;
+    consultoresPorLoja.push({ grupo: loja.nome, pontos, ...calcStats(pontos, dados.meta) });
+  }
+  consultoresPorLoja.sort((a, b) => b.amplitude - a.amplitude);
+
+  // 2) Lojas por gestor
+  const gestorLojaMap = new Map<string, Map<string, { identificados: number; vendas: number }>>();
+  for (const r of regs) {
+    const loja = dados.lojas.find((l) => l.id === r.lojaId);
+    if (!loja) continue;
+    if (!gestorLojaMap.has(loja.gestor)) gestorLojaMap.set(loja.gestor, new Map());
+    const lm = gestorLojaMap.get(loja.gestor)!;
+    const cur = lm.get(loja.nome) ?? { identificados: 0, vendas: 0 };
+    cur.identificados += r.identificados;
+    cur.vendas += r.vendas;
+    lm.set(loja.nome, cur);
+  }
+  const lojasPorGestor: GrupoDispersao[] = [];
+  for (const [gestor, lm] of gestorLojaMap) {
+    const pontos: PontoDispersao[] = [...lm.entries()]
+      .filter(([, v]) => v.vendas > 0)
+      .map(([nome, v]) => ({
+        nome,
+        taxa: (v.identificados / v.vendas) * 100,
+        vendas: v.vendas,
+        identificados: v.identificados,
+      }))
+      .sort((a, b) => a.taxa - b.taxa);
+    if (pontos.length < 2) continue;
+    lojasPorGestor.push({ grupo: gestor, pontos, ...calcStats(pontos, dados.meta) });
+  }
+  lojasPorGestor.sort((a, b) => b.amplitude - a.amplitude);
+
+  // 3) Lojas por praça
+  const pracaLojaMap = new Map<string, Map<string, { identificados: number; vendas: number }>>();
+  for (const r of regs) {
+    const loja = dados.lojas.find((l) => l.id === r.lojaId);
+    if (!loja) continue;
+    if (!pracaLojaMap.has(loja.praca)) pracaLojaMap.set(loja.praca, new Map());
+    const lm = pracaLojaMap.get(loja.praca)!;
+    const cur = lm.get(loja.nome) ?? { identificados: 0, vendas: 0 };
+    cur.identificados += r.identificados;
+    cur.vendas += r.vendas;
+    lm.set(loja.nome, cur);
+  }
+  const lojasPorPraca: GrupoDispersao[] = [];
+  for (const [praca, lm] of pracaLojaMap) {
+    const pontos: PontoDispersao[] = [...lm.entries()]
+      .filter(([, v]) => v.vendas > 0)
+      .map(([nome, v]) => ({
+        nome,
+        taxa: (v.identificados / v.vendas) * 100,
+        vendas: v.vendas,
+        identificados: v.identificados,
+      }))
+      .sort((a, b) => a.taxa - b.taxa);
+    if (pontos.length < 2) continue;
+    lojasPorPraca.push({ grupo: praca, pontos, ...calcStats(pontos, dados.meta) });
+  }
+  lojasPorPraca.sort((a, b) => b.amplitude - a.amplitude);
+
   return {
     serie,
     taxaPeriodo,
@@ -422,6 +554,7 @@ export function computar(dados: DadosConsolidados, f: Filtros): DashboardCompute
     lojasComIndevido: rankingIndevido.length,
     melhorLoja: ranking[0],
     piorLoja: ranking[ranking.length - 1],
+    dispersao: { consultoresPorLoja, lojasPorGestor, lojasPorPraca },
   };
 }
 

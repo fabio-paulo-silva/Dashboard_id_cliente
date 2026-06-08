@@ -11,6 +11,7 @@ import {
   CalendarDays,
   ShieldAlert,
   BadgePercent,
+  GitBranch,
 } from "lucide-react";
 
 import {
@@ -30,13 +31,14 @@ import { ConsultorTable } from "@/components/dashboard/ConsultorTable";
 import { GestorTable } from "@/components/dashboard/GestorTable";
 import { DiaADiaTable } from "@/components/dashboard/DiaADiaTable";
 import { UsoIndevidoTable } from "@/components/dashboard/UsoIndevidoTable";
+import { DispersaoView } from "@/components/dashboard/DispersaoView";
 import { cn } from "@/lib/utils";
 
 export const Route = createFileRoute("/")({
   component: Index,
 });
 
-type Tab = "geral" | "lojas" | "consultores" | "gestores" | "diaadia" | "indevido";
+type Tab = "geral" | "lojas" | "consultores" | "gestores" | "diaadia" | "dispersao" | "indevido";
 
 const TABS: { id: Tab; label: string; icon: React.ElementType; danger?: boolean }[] = [
   { id: "geral",       label: "Visão Geral",  icon: LayoutDashboard },
@@ -44,6 +46,7 @@ const TABS: { id: Tab; label: string; icon: React.ElementType; danger?: boolean 
   { id: "consultores", label: "Consultores",  icon: Users },
   { id: "gestores",    label: "Gestores",     icon: UserCheck },
   { id: "diaadia",     label: "Dia a Dia",    icon: CalendarDays },
+  { id: "dispersao",   label: "Dispersão",    icon: GitBranch },
   { id: "indevido",    label: "Uso Indevido", icon: ShieldAlert, danger: true },
 ];
 
@@ -209,6 +212,10 @@ function Index() {
               : undefined
             }
           />
+        )}
+
+        {tab === "dispersao" && (
+          <DispersaoView dispersao={computed.dispersao} meta={data.meta} />
         )}
 
         {tab === "indevido" && (
