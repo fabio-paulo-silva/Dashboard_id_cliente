@@ -130,8 +130,12 @@ export interface GrupoDispersao {
   media: number;
   mediana: number;
   amplitude: number;
-  /** Desvio médio absoluto em relação à META: mean(|taxa_i − meta|) */
+  /** Dist. média absoluta vs META: mean(|taxa_i − meta|) */
   desvMeta: number;
+  /** Média de (taxa_i − meta) apenas para membros ACIMA da meta — positivo */
+  desvAcima: number | null;
+  /** Média de (taxa_i − meta) apenas para membros ABAIXO da meta — negativo */
+  desvAbaixo: number | null;
   acimaMeta: number;
 }
 
@@ -246,10 +250,19 @@ function calcStats(pontos: PontoDispersao[], meta: number): Omit<GrupoDispersao,
   const mid = Math.floor(n / 2);
   const mediana = n % 2 === 0 ? (taxas[mid - 1] + taxas[mid]) / 2 : taxas[mid];
   const amplitude = max - min;
-  // Desvio médio absoluto vs META: "em média, quanto cada membro está longe da meta"
+  // Dist. média absoluta vs META
   const desvMeta = taxas.reduce((s, t) => s + Math.abs(t - meta), 0) / (n || 1);
   const acimaMeta = taxas.filter((t) => t >= meta).length;
-  return { n, min, max, media, mediana, amplitude, desvMeta, acimaMeta };
+  // Média signed: só quem está ACIMA (+) e só quem está ABAIXO (-)
+  const taxasAcima = taxas.filter((t) => t >= meta);
+  const taxasAbaixo = taxas.filter((t) => t < meta);
+  const desvAcima = taxasAcima.length > 0
+    ? taxasAcima.reduce((s, t) => s + (t - meta), 0) / taxasAcima.length
+    : null;
+  const desvAbaixo = taxasAbaixo.length > 0
+    ? taxasAbaixo.reduce((s, t) => s + (t - meta), 0) / taxasAbaixo.length
+    : null;
+  return { n, min, max, media, mediana, amplitude, desvMeta, desvAcima, desvAbaixo, acimaMeta };
 }
 
 export function computar(dados: DadosConsolidados, f: Filtros): DashboardComputed {

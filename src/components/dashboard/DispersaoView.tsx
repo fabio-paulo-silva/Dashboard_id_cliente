@@ -288,7 +288,9 @@ export function DispersaoView({ dispersao, meta }: Props) {
                 <SortTh label="Média"      sortKey="media"     activeKey={sortKey} dir={sortDir} onSort={toggle} className="px-2" />
                 <SortTh label="Máx"        sortKey="max"       activeKey={sortKey} dir={sortDir} onSort={toggle} className="px-2" />
                 <SortTh label="Amplitude"  sortKey="amplitude" activeKey={sortKey} dir={sortDir} onSort={toggle} className="px-2" />
-                <SortTh label="Dist. Média à Meta" sortKey="desvMeta" activeKey={sortKey} dir={sortDir} onSort={toggle} className="px-2" />
+                <th className="px-3 py-3 text-xs font-semibold text-muted-foreground">
+                  Desvio vs Meta
+                </th>
                 <th className="px-5 py-3 text-right text-xs font-semibold text-muted-foreground">
                   Acima meta
                 </th>
@@ -353,14 +355,24 @@ export function DispersaoView({ dispersao, meta }: Props) {
                           </span>
                         </div>
                       </td>
-                      {/* Distância média à meta */}
-                      <td className="px-2 py-3">
-                        <span className={cn(
-                          "font-semibold tabular-nums",
-                          g.desvMeta < 20 ? "text-primary" : g.desvMeta < 50 ? "text-amber-500" : "text-destructive",
-                        )}>
-                          {fmtPct(g.desvMeta, 1)} pp
-                        </span>
+                      {/* Desvio vs Meta — positivo (acima) e negativo (abaixo) */}
+                      <td className="px-3 py-3">
+                        <div className="flex flex-col gap-0.5">
+                          {g.desvAcima !== null ? (
+                            <span className="text-xs font-bold tabular-nums text-primary">
+                              +{fmtPct(g.desvAcima, 1)} pp
+                            </span>
+                          ) : (
+                            <span className="text-xs text-muted-foreground/40">—</span>
+                          )}
+                          {g.desvAbaixo !== null ? (
+                            <span className="text-xs font-bold tabular-nums text-destructive">
+                              {fmtPct(g.desvAbaixo, 1)} pp
+                            </span>
+                          ) : (
+                            <span className="text-xs text-muted-foreground/40">—</span>
+                          )}
+                        </div>
                       </td>
                       {/* Acima meta */}
                       <td className="px-5 py-3 text-right">
