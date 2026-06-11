@@ -32,28 +32,56 @@ function ChartTooltip({ active, payload, label }: any) {
   );
 }
 
-function DataLabel({ x, y, value }: any) {
-  if (value == null) return null;
-  return (
-    <text
-      x={x}
-      y={y - 10}
-      textAnchor="middle"
-      fill="var(--color-foreground)"
-      fontSize={11}
-      fontWeight={600}
-      fontFamily="var(--font-sans)"
-    >
-      {Number(value).toFixed(1)}%
-    </text>
-  );
+function makeDataLabel(serie: SerieDiaria[]) {
+  return function DataLabel({ x, y, value, index }: any) {
+    if (value == null) return null;
+    const prev = index > 0 ? serie[index - 1]?.taxa ?? null : null;
+    const delta = prev !== null ? (value as number) - prev : null;
+    const deltaStr = delta !== null
+      ? `${delta >= 0 ? "+" : ""}${delta.toLocaleString("pt-BR", { minimumFractionDigits: 1, maximumFractionDigits: 1 })}%`
+      : null;
+    const deltaColor = delta !== null
+      ? delta >= 0 ? "var(--color-primary)" : "var(--color-destructive)"
+      : "transparent";
+
+    return (
+      <g>
+        {/* valor principal */}
+        <text
+          x={x}
+          y={y - 20}
+          textAnchor="middle"
+          fill="var(--color-foreground)"
+          fontSize={11}
+          fontWeight={600}
+          fontFamily="var(--font-sans)"
+        >
+          {Number(value).toFixed(1)}%
+        </text>
+        {/* variação dia anterior */}
+        {deltaStr && (
+          <text
+            x={x}
+            y={y - 8}
+            textAnchor="middle"
+            fill={deltaColor}
+            fontSize={9}
+            fontWeight={700}
+            fontFamily="var(--font-sans)"
+          >
+            {deltaStr}
+          </text>
+        )}
+      </g>
+    );
+  };
 }
 
 export function EvolutionChart({ serie, meta, titulo }: EvolutionChartProps) {
   if (!serie.length) return null;
   const taxaValues = serie.map((s) => s.taxa);
   const min = Math.max(0, Math.floor(Math.min(...taxaValues, meta) - 8));
-  const max = Math.ceil(Math.max(...taxaValues, meta) + 12); // espaço para rótulos
+  const max = Math.ceil(Math.max(...taxaValues, meta) + 18); // espaço para rótulo + variação
 
   // Mostrar rótulos apenas se poucos pontos (até 14)
   const showLabels = serie.length <= 14;
@@ -133,7 +161,7 @@ export function EvolutionChart({ serie, meta, titulo }: EvolutionChartProps) {
               }}
             >
               {showLabels && (
-                <LabelList dataKey="taxa" content={<DataLabel />} />
+                <LabelList dataKey="taxa" content={makeDataLabel(serie)} />
               )}
             </Area>
           </AreaChart>
