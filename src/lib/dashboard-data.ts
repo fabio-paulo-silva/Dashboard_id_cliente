@@ -487,6 +487,7 @@ export function computar(dados: DadosConsolidados, f: Filtros): DashboardCompute
         vendas: v.vendas,
         identificados: v.identificados,
       }))
+      .filter((p) => p.taxa > 0)  // exclui consultores com 0% ID Cliente
       .sort((a, b) => a.taxa - b.taxa);
     if (pontos.length < 2) continue;
     consultoresPorLoja.push({ grupo: loja.nome, pontos, ...calcStats(pontos, dados.meta) });
