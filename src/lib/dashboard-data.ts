@@ -469,9 +469,10 @@ export function computar(dados: DadosConsolidados, f: Filtros): DashboardCompute
 
   const totalAtendIndevido = regs.reduce((s, r) => s + (r.atendIndevido ?? 0), 0);
 
-  // Série diária de uso indevido
+  // Série diária de uso indevido — usa regsConsultor quando há filtro de consultor
+  const regsParaIndevido = f.consultor !== "all" ? regsConsultor : regs;
   const invDayMap = new Map<string, { atendIndevido: number; totalAtend: number }>();
-  for (const r of regs) {
+  for (const r of regsParaIndevido) {
     const cur = invDayMap.get(r.data) ?? { atendIndevido: 0, totalAtend: 0 };
     cur.atendIndevido += r.atendIndevido ?? 0;
     cur.totalAtend += r.atendId;
