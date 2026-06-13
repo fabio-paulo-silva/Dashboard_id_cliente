@@ -1,7 +1,8 @@
 import { motion } from "motion/react";
 import { ShieldAlert, ShieldX } from "lucide-react";
 import { cn } from "@/lib/utils";
-import { fmtNum, fmtPct, type RankingIndevido, type RankingConsultorIndevido } from "@/lib/dashboard-data";
+import { fmtNum, fmtPct, type RankingIndevido, type RankingConsultorIndevido, type SerieIndevido } from "@/lib/dashboard-data";
+import { IndevidoChart } from "./IndevidoChart";
 
 interface Props {
   lojas: RankingIndevido[];
@@ -9,11 +10,15 @@ interface Props {
   totalAtend: number;
   lojasComIndevido: number;
   totalLojas: number;
+  serieIndevido: SerieIndevido[];
 }
 
-export function UsoIndevidoTable({ lojas, consultores, totalAtend, lojasComIndevido, totalLojas }: Props) {
+export function UsoIndevidoTable({ lojas, consultores, totalAtend, lojasComIndevido, totalLojas, serieIndevido }: Props) {
   return (
     <div className="space-y-6">
+      {/* Gráfico dia a dia */}
+      <IndevidoChart serie={serieIndevido} />
+
       {/* Resumo */}
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
         <div className="rounded-2xl border bg-card p-5 shadow-card">

@@ -225,6 +225,7 @@ function Index() {
             totalAtend={computed.totalAtendIndevido}
             lojasComIndevido={computed.lojasComIndevido}
             totalLojas={computed.totalLojas}
+            serieIndevido={computed.serieIndevido}
           />
         )}
       </main>

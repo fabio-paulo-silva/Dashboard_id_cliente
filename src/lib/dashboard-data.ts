@@ -66,6 +66,13 @@ export interface SerieDiaria {
   taxa: number;
 }
 
+export interface SerieIndevido {
+  data: string;
+  atendIndevido: number;
+  totalAtend: number;
+  taxaIndevido: number;
+}
+
 export interface RankingLoja {
   id: string;
   nome: string;
@@ -238,6 +245,7 @@ export interface DashboardComputed {
   melhorLoja?: RankingLoja;
   piorLoja?: RankingLoja;
   dispersao: DispersaoData;
+  serieIndevido: SerieIndevido[];
 }
 
 // ─── Helper: estatísticas de dispersão ────────────────────────────────────────
@@ -461,6 +469,23 @@ export function computar(dados: DadosConsolidados, f: Filtros): DashboardCompute
 
   const totalAtendIndevido = regs.reduce((s, r) => s + (r.atendIndevido ?? 0), 0);
 
+  // Série diária de uso indevido
+  const invDayMap = new Map<string, { atendIndevido: number; totalAtend: number }>();
+  for (const r of regs) {
+    const cur = invDayMap.get(r.data) ?? { atendIndevido: 0, totalAtend: 0 };
+    cur.atendIndevido += r.atendIndevido ?? 0;
+    cur.totalAtend += r.atendId;
+    invDayMap.set(r.data, cur);
+  }
+  const serieIndevido: SerieIndevido[] = [...invDayMap.entries()]
+    .sort((a, b) => (a[0] < b[0] ? -1 : 1))
+    .map(([data, v]) => ({
+      data,
+      atendIndevido: v.atendIndevido,
+      totalAtend: v.totalAtend,
+      taxaIndevido: v.totalAtend === 0 ? 0 : Number(((v.atendIndevido / v.totalAtend) * 100).toFixed(2)),
+    }));
+
   // ─── Dispersão ────────────────────────────────────────────────────────────
   // FORMULA: taxa = identificados / vendas × 100
   //          identificados já vem do Python como (cpf_bruto − indevidos)
@@ -571,6 +596,7 @@ export function computar(dados: DadosConsolidados, f: Filtros): DashboardCompute
     melhorLoja: ranking[0],
     piorLoja: ranking[ranking.length - 1],
     dispersao: { consultoresPorLoja, lojasPorGestor, lojasPorPraca },
+    serieIndevido,
   };
 }
 
