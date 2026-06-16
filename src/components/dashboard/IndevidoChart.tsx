@@ -81,7 +81,7 @@ function SimpleLabel({ x, y, value }: any) {
 // ── Componente principal ──────────────────────────────────────────────────────
 export function IndevidoChart({ serie }: Props) {
   if (!serie.length) return null;
-  const showLabels = serie.length <= 14;
+  const showLabels = serie.length <= 31;
   const taxas = serie.map((s) => s.taxaIndevido);
   const min = Math.max(0, Math.floor(Math.min(...taxas) - 2));
   const max = Math.ceil(Math.max(...taxas) + 5);
@@ -107,7 +107,7 @@ export function IndevidoChart({ serie }: Props) {
 
       <div className="h-64 w-full">
         <ResponsiveContainer width="100%" height="100%">
-          <AreaChart data={serie} margin={{ top: 22, right: 16, left: -16, bottom: 0 }}>
+          <AreaChart data={serie} margin={{ top: 32, right: 16, left: -16, bottom: 0 }}>
             <defs>
               <linearGradient id="invFill" x1="0" y1="0" x2="0" y2="1">
                 <stop offset="0%" stopColor="var(--color-destructive)" stopOpacity={0.25} />

@@ -115,7 +115,7 @@ export function EvolutionChart({ serie, meta, titulo }: EvolutionChartProps) {
   const taxaValues = serie.map((s) => s.taxa);
   const min = Math.max(0, Math.floor(Math.min(...taxaValues, meta) - 8));
   const max = Math.ceil(Math.max(...taxaValues, meta) + 18);
-  const showLabels = serie.length <= 14;
+  const showLabels = serie.length <= 31;
 
   return (
     <motion.div
@@ -141,7 +141,7 @@ export function EvolutionChart({ serie, meta, titulo }: EvolutionChartProps) {
 
       <div className="h-72 w-full">
         <ResponsiveContainer width="100%" height="100%">
-          <AreaChart data={serie} margin={{ top: 24, right: 16, left: -16, bottom: 0 }}>
+          <AreaChart data={serie} margin={{ top: 40, right: 16, left: -16, bottom: 0 }}>
             <defs>
               <linearGradient id="taxaFill" x1="0" y1="0" x2="0" y2="1">
                 <stop offset="0%" stopColor="var(--color-primary)" stopOpacity={0.3} />
