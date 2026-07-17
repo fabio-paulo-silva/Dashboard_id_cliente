@@ -51,10 +51,11 @@ export interface DadosConsolidados {
 }
 
 export interface Filtros {
-  praca: string;
-  loja: string;
-  gestor: string;
-  consultor: string; // "all" ou nome do consultor
+  pracas: string[];
+  lojas: string[];
+  gestores: string[];
+  consultores: string[];
+  meses: string[];       // "YYYY-MM"
   dataInicio: string;
   dataFim: string;
 }
@@ -195,9 +196,9 @@ function addDays(iso: string, days: number): string {
 
 export function lojasFiltradas(dados: DadosConsolidados, f: Filtros): Loja[] {
   return dados.lojas.filter((l) => {
-    if (f.praca !== "all" && l.praca !== f.praca) return false;
-    if (f.gestor !== "all" && l.gestor !== f.gestor) return false;
-    if (f.loja !== "all" && l.id !== f.loja) return false;
+    if (f.pracas.length > 0 && !f.pracas.includes(l.praca)) return false;
+    if (f.gestores.length > 0 && !f.gestores.includes(l.gestor)) return false;
+    if (f.lojas.length > 0 && !f.lojas.includes(l.id)) return false;
     return true;
   });
 }
@@ -279,7 +280,8 @@ export function computar(dados: DadosConsolidados, f: Filtros): DashboardCompute
   const inicio = f.dataInicio !== "all" ? f.dataInicio : dados.periodo.inicio;
   const fim = f.dataFim !== "all" ? f.dataFim : dados.periodo.fim;
 
-  const regs = registrosNoIntervalo(dados.registros, ids, inicio, fim);
+  const regsRaw = registrosNoIntervalo(dados.registros, ids, inicio, fim);
+  const regs = f.meses.length > 0 ? regsRaw.filter((r) => f.meses.includes(r.data.slice(0, 7))) : regsRaw;
 
   // série diária
   const map = new Map<string, { vendas: number; identificados: number }>();
@@ -332,10 +334,11 @@ export function computar(dados: DadosConsolidados, f: Filtros): DashboardCompute
 
   // ranking por consultor
   const regsConsultorBase = (dados.registrosConsultor ?? []).filter(
-    (r) => ids.has(r.lojaId) && r.data >= inicio && r.data <= fim,
+    (r) => ids.has(r.lojaId) && r.data >= inicio && r.data <= fim &&
+      (f.meses.length === 0 || f.meses.includes(r.data.slice(0, 7))),
   );
-  const regsConsultor = f.consultor !== "all"
-    ? regsConsultorBase.filter((r) => r.consultor === f.consultor)
+  const regsConsultor = f.consultores.length > 0
+    ? regsConsultorBase.filter((r) => f.consultores.includes(r.consultor))
     : regsConsultorBase;
   // Agrupar por consultor (pode atuar em várias lojas — soma tudo)
   const consMapFull = new Map<string, {
@@ -424,13 +427,13 @@ export function computar(dados: DadosConsolidados, f: Filtros): DashboardCompute
 
   // dia a dia resumo — usa dados de consultor se filtrado por ele
   const diasResumo: DiaResumo[] = (() => {
-    const fonte = f.consultor !== "all" ? regsConsultor : regs;
+    const fonte = f.consultores.length > 0 ? regsConsultor : regs;
     const dmap = new Map<string, { vendas: number; identificados: number; entidades: Set<string> }>();
     for (const r of fonte) {
       const cur = dmap.get(r.data) ?? { vendas: 0, identificados: 0, entidades: new Set() };
       cur.vendas += r.vendas;
       cur.identificados += r.identificados;
-      cur.entidades.add(f.consultor !== "all" ? (r as any).consultor ?? r.lojaId : r.lojaId);
+      cur.entidades.add(f.consultores.length > 0 ? (r as any).consultor ?? r.lojaId : r.lojaId);
       dmap.set(r.data, cur);
     }
     return [...dmap.entries()]
@@ -470,7 +473,7 @@ export function computar(dados: DadosConsolidados, f: Filtros): DashboardCompute
   const totalAtendIndevido = regs.reduce((s, r) => s + (r.atendIndevido ?? 0), 0);
 
   // Série diária de uso indevido — usa regsConsultor quando há filtro de consultor
-  const regsParaIndevido = f.consultor !== "all" ? regsConsultor : regs;
+  const regsParaIndevido = f.consultores.length > 0 ? regsConsultor : regs;
   const invDayMap = new Map<string, { atendIndevido: number; totalAtend: number }>();
   for (const r of regsParaIndevido) {
     const cur = invDayMap.get(r.data) ?? { atendIndevido: 0, totalAtend: 0 };

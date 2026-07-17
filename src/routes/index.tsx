@@ -22,7 +22,7 @@ import {
   type Filtros,
 } from "@/lib/dashboard-data";
 import { DashboardHeader } from "@/components/dashboard/DashboardHeader";
-import { FilterBar } from "@/components/dashboard/FilterBar";
+import { FilterBar, FILTROS_VAZIOS } from "@/components/dashboard/FilterBar";
 import { KpiCard } from "@/components/dashboard/KpiCard";
 import { EvolutionChart } from "@/components/dashboard/EvolutionChart";
 import { PracaChart } from "@/components/dashboard/PracaChart";
@@ -52,14 +52,7 @@ const TABS: { id: Tab; label: string; icon: React.ElementType; danger?: boolean 
 
 function Index() {
   const [tab, setTab] = useState<Tab>("geral");
-  const [filtros, setFiltros] = useState<Filtros>({
-    praca: "all",
-    loja: "all",
-    gestor: "all",
-    consultor: "all",
-    dataInicio: "all",
-    dataFim: "all",
-  });
+  const [filtros, setFiltros] = useState<Filtros>(FILTROS_VAZIOS);
 
   const { data, isLoading, isError } = useQuery({
     queryKey: ["dados-consolidados"],
@@ -205,10 +198,14 @@ function Index() {
             serie={computed.serie}
             meta={data.meta}
             tituloGrafico={
-              filtros.consultor !== "all" ? filtros.consultor
-              : filtros.loja !== "all" ? data.lojas.find((l) => l.id === filtros.loja)?.nome
-              : filtros.gestor !== "all" ? filtros.gestor
-              : filtros.praca !== "all" ? filtros.praca
+              filtros.consultores.length === 1 ? filtros.consultores[0]
+              : filtros.consultores.length > 1 ? `${filtros.consultores.length} consultores`
+              : filtros.lojas.length === 1 ? data.lojas.find((l) => l.id === filtros.lojas[0])?.nome
+              : filtros.lojas.length > 1 ? `${filtros.lojas.length} lojas`
+              : filtros.gestores.length === 1 ? filtros.gestores[0]
+              : filtros.gestores.length > 1 ? `${filtros.gestores.length} gestores`
+              : filtros.pracas.length === 1 ? filtros.pracas[0]
+              : filtros.pracas.length > 1 ? `${filtros.pracas.length} praças`
               : undefined
             }
           />
