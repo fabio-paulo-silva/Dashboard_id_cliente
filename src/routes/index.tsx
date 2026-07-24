@@ -12,6 +12,7 @@ import {
   ShieldAlert,
   BadgePercent,
   GitBranch,
+  Calculator,
 } from "lucide-react";
 
 import {
@@ -32,22 +33,24 @@ import { GestorTable } from "@/components/dashboard/GestorTable";
 import { DiaADiaTable } from "@/components/dashboard/DiaADiaTable";
 import { UsoIndevidoTable } from "@/components/dashboard/UsoIndevidoTable";
 import { DispersaoView } from "@/components/dashboard/DispersaoView";
+import { CalculadoraView } from "@/components/dashboard/CalculadoraView";
 import { cn } from "@/lib/utils";
 
 export const Route = createFileRoute("/")({
   component: Index,
 });
 
-type Tab = "geral" | "lojas" | "consultores" | "gestores" | "diaadia" | "dispersao" | "indevido";
+type Tab = "geral" | "lojas" | "consultores" | "gestores" | "diaadia" | "dispersao" | "indevido" | "calculadora";
 
-const TABS: { id: Tab; label: string; icon: React.ElementType; danger?: boolean }[] = [
-  { id: "geral",       label: "Visão Geral",  icon: LayoutDashboard },
-  { id: "lojas",       label: "Por Loja",     icon: Store },
-  { id: "consultores", label: "Consultores",  icon: Users },
-  { id: "gestores",    label: "Gestores",     icon: UserCheck },
-  { id: "diaadia",     label: "Dia a Dia",    icon: CalendarDays },
-  { id: "dispersao",   label: "Dispersão",    icon: GitBranch },
-  { id: "indevido",    label: "Uso Indevido", icon: ShieldAlert, danger: true },
+const TABS: { id: Tab; label: string; icon: React.ElementType; danger?: boolean; isNew?: boolean }[] = [
+  { id: "geral",        label: "Visão Geral",  icon: LayoutDashboard },
+  { id: "lojas",        label: "Por Loja",     icon: Store },
+  { id: "consultores",  label: "Consultores",  icon: Users },
+  { id: "gestores",     label: "Gestores",     icon: UserCheck },
+  { id: "diaadia",      label: "Dia a Dia",    icon: CalendarDays },
+  { id: "dispersao",    label: "Dispersão",    icon: GitBranch },
+  { id: "indevido",     label: "Uso Indevido", icon: ShieldAlert, danger: true },
+  { id: "calculadora",  label: "Calculadora",  icon: Calculator, isNew: true },
 ];
 
 function Index() {
@@ -138,26 +141,38 @@ function Index() {
         {/* Tabs de navegação destacadas */}
         <nav className="rounded-2xl border bg-card p-1.5 shadow-card">
           <div className="flex overflow-x-auto gap-1">
-            {TABS.map(({ id, label, icon: Icon, danger }) => {
+            {TABS.map(({ id, label, icon: Icon, danger, isNew }) => {
               const active = tab === id;
               return (
                 <button
                   key={id}
                   onClick={() => setTab(id)}
                   className={cn(
-                    "flex flex-1 min-w-max items-center justify-center gap-2 rounded-xl px-4 py-2.5 text-sm font-bold transition-all whitespace-nowrap",
-                    active && !danger &&
+                    "relative flex flex-1 min-w-max items-center justify-center gap-2 rounded-xl px-4 py-2.5 text-sm font-bold transition-all whitespace-nowrap",
+                    active && !danger && !isNew &&
                       "bg-primary text-primary-foreground shadow-md",
+                    active && isNew &&
+                      "bg-accent text-accent-foreground shadow-md",
                     active && danger &&
                       "bg-destructive text-destructive-foreground shadow-md",
-                    !active && !danger &&
+                    !active && !danger && !isNew &&
                       "text-muted-foreground hover:bg-muted hover:text-foreground",
+                    !active && isNew &&
+                      "text-accent/80 hover:bg-accent/10 hover:text-accent",
                     !active && danger &&
                       "text-destructive/70 hover:bg-destructive/10 hover:text-destructive",
                   )}
                 >
                   <Icon className="h-4 w-4 shrink-0" />
                   <span>{label}</span>
+                  {isNew && (
+                    <span className={cn(
+                      "rounded-full px-1.5 py-px text-[9px] font-extrabold uppercase tracking-wider leading-none",
+                      active ? "bg-white/20 text-white" : "bg-accent/20 text-accent",
+                    )}>
+                      novo
+                    </span>
+                  )}
                 </button>
               );
             })}
@@ -224,6 +239,10 @@ function Index() {
             totalLojas={computed.totalLojas}
             serieIndevido={computed.serieIndevido}
           />
+        )}
+
+        {tab === "calculadora" && (
+          <CalculadoraView />
         )}
       </main>
     </div>
