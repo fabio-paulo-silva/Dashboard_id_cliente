@@ -43,6 +43,7 @@ export const Route = createFileRoute("/")({
 type Tab = "geral" | "lojas" | "consultores" | "gestores" | "diaadia" | "dispersao" | "indevido" | "calculadora";
 
 const TABS: { id: Tab; label: string; icon: React.ElementType; danger?: boolean; isNew?: boolean }[] = [
+  { id: "calculadora",  label: "Calculadora",  icon: Calculator, isNew: true },
   { id: "geral",        label: "Visão Geral",  icon: LayoutDashboard },
   { id: "lojas",        label: "Por Loja",     icon: Store },
   { id: "consultores",  label: "Consultores",  icon: Users },
@@ -50,7 +51,6 @@ const TABS: { id: Tab; label: string; icon: React.ElementType; danger?: boolean;
   { id: "diaadia",      label: "Dia a Dia",    icon: CalendarDays },
   { id: "dispersao",    label: "Dispersão",    icon: GitBranch },
   { id: "indevido",     label: "Uso Indevido", icon: ShieldAlert, danger: true },
-  { id: "calculadora",  label: "Calculadora",  icon: Calculator, isNew: true },
 ];
 
 function Index() {
@@ -152,13 +152,13 @@ function Index() {
                     active && !danger && !isNew &&
                       "bg-primary text-primary-foreground shadow-md",
                     active && isNew &&
-                      "bg-accent text-accent-foreground shadow-md",
+                      "bg-primary text-primary-foreground shadow-md",
                     active && danger &&
                       "bg-destructive text-destructive-foreground shadow-md",
                     !active && !danger && !isNew &&
                       "text-muted-foreground hover:bg-muted hover:text-foreground",
                     !active && isNew &&
-                      "text-accent/80 hover:bg-accent/10 hover:text-accent",
+                      "text-primary hover:bg-primary/10",
                     !active && danger &&
                       "text-destructive/70 hover:bg-destructive/10 hover:text-destructive",
                   )}
@@ -167,8 +167,8 @@ function Index() {
                   <span>{label}</span>
                   {isNew && (
                     <span className={cn(
-                      "rounded-full px-1.5 py-px text-[9px] font-extrabold uppercase tracking-wider leading-none",
-                      active ? "bg-white/20 text-white" : "bg-accent/20 text-accent",
+                      "rounded-full px-2 py-0.5 text-[10px] font-extrabold uppercase tracking-wider ring-1",
+                      active ? "bg-white/20 text-white ring-white/30" : "bg-primary text-primary-foreground ring-primary/50 animate-pulse",
                     )}>
                       novo
                     </span>
