@@ -66,8 +66,9 @@ def main():
                 # row[4] = % Atend com CPF (IAF 2026) = (atend_cpf - indevidos) / boletos — já é a fórmula correta
                 taxa_raw = float(row[4]) if pd.notna(row[4]) else 0
                 taxa = round(taxa_raw*100 if taxa_raw<=5 else taxa_raw, 4)
-                # identificados = taxa_raw * boletos = (atend_cpf - indevidos) — soma em todas as lojas
-                atend_cpf_net = round(taxa_raw * boletos) if boletos > 0 else 0
+                # identificados = taxa_decimal * boletos = (atend_cpf - indevidos)
+                taxa_decimal = taxa_raw if taxa_raw <= 5 else taxa_raw / 100
+                atend_cpf_net = round(taxa_decimal * boletos) if boletos > 0 else 0
                 atend_indevido = float(row[3]) if pd.notna(row[3]) else 0
                 boletos_indevido = float(row[9]) if pd.notna(row[9]) else 0
                 taxa_inv_raw = float(row[5]) if pd.notna(row[5]) else 0
