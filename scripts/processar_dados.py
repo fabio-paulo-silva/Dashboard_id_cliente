@@ -55,27 +55,35 @@ def main():
                     "atendIndevido":int(atend_indevido),"boletosIndevido":int(boletos_indevido),"taxaIndevido":taxa_indevido})
             except: pass
 
-        df_cons = pd.read_excel(f, sheet_name="CONSULTOR", dtype={0: str})
-        df_cons.columns = list(range(len(df_cons.columns)))
+        df_cons = pd.read_excel(f, sheet_name="CONSULTOR", header=0, dtype={0: str})
+        # Normaliza nomes de colunas para lookup robusto
+        col_map = {str(c).strip(): i for i, c in enumerate(df_cons.columns)}
+        def _gcol(row, *names):
+            for n in names:
+                if n in col_map and pd.notna(row.iloc[col_map[n]]):
+                    try: return float(row.iloc[col_map[n]])
+                    except: pass
+            return 0.0
         for _, row in df_cons.iterrows():
-            pdv = str(row[0]).strip(); consultor = str(row[1]).strip() if pd.notna(row[1]) else ""
-            if not pdv or pdv in ("nan","PDV") or not consultor: continue
+            pdv = str(row.iloc[0]).strip()
+            consultor = str(row.iloc[1]).strip() if pd.notna(row.iloc[1]) else ""
+            if not pdv or pdv in ("nan","PDV") or not consultor or consultor == "nan": continue
             try:
-                atend_id = float(row[2]) if pd.notna(row[2]) else 0
-                boletos = float(row[7]) if pd.notna(row[7]) else 0
-                # row[4] = % Atend com CPF (IAF 2026) = (atend_cpf - indevidos) / boletos — já é a fórmula correta
-                taxa_raw = float(row[4]) if pd.notna(row[4]) else 0
-                taxa = round(taxa_raw*100 if taxa_raw<=5 else taxa_raw, 4)
-                # identificados = taxa_decimal * boletos = (atend_cpf - indevidos)
+                atend_id    = _gcol(row, "ATENDIMENTOS NO ID CLIENTE")
+                atend_indev = _gcol(row, "ATENDIMENTOS USO INDEVIDO")
+                boletos     = _gcol(row, "TOTAL BOLETOS")
+                bol_indev   = _gcol(row, "BOLETOS ID CLIENTE USO INDEVIDO")
+                # % Atend com CPF (IAF) = (atend_cpf - indevidos) / boletos
+                taxa_raw = _gcol(row, "% Atendimentos com CPF (IAF 2026)", "% Atendimentos com CPF (IAF)")
+                taxa = round(taxa_raw * 100 if taxa_raw <= 5 else taxa_raw, 4)
                 taxa_decimal = taxa_raw if taxa_raw <= 5 else taxa_raw / 100
                 atend_cpf_net = round(taxa_decimal * boletos) if boletos > 0 else 0
-                atend_indevido = float(row[3]) if pd.notna(row[3]) else 0
-                boletos_indevido = float(row[9]) if pd.notna(row[9]) else 0
-                taxa_inv_raw = float(row[5]) if pd.notna(row[5]) else 0
-                taxa_indevido = round(taxa_inv_raw*100 if taxa_inv_raw<=1 else taxa_inv_raw, 4)
+                taxa_inv_raw = _gcol(row, "% ATENDIMENTOS USO INDEVIDO")
+                taxa_indevido = round(taxa_inv_raw * 100 if taxa_inv_raw <= 1 else taxa_inv_raw, 4)
+                if boletos <= 0: continue
                 registros_cons.append({"data":data_iso,"lojaId":pdv,"consultor":consultor,
                     "vendas":int(boletos),"identificados":int(atend_cpf_net),"atendId":int(atend_id),"taxa":taxa,
-                    "atendIndevido":int(atend_indevido),"boletosIndevido":int(boletos_indevido),"taxaIndevido":taxa_indevido})
+                    "atendIndevido":int(atend_indev),"boletosIndevido":int(bol_indev),"taxaIndevido":taxa_indevido})
             except: pass
 
     all_dates.sort()
